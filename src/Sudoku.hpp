@@ -62,14 +62,48 @@ class Sudoku
             }
         }
 
-        void generateBoard(int clue_num)
+        bool fillBoard(int row, int col) 
+        {
+            if (row == _size) return true;
+
+            vector nums = {1,2,3,4,5,6,7,8,9};
+            std::shuffle(nums.begin(), nums.end(), rng);
+
+            for (int num : nums) 
+            {
+                int mask = 1 << (num - 1);
+                int box = 3 * (row / 3) + col / 3;
+                if (!(_rows[row] & mask) && !(_cols[col] & mask) && !(_boxes[box] & mask)) 
+                {
+                    _board[row][col] = num;
+                    _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                    
+                    if (col < _size - 1) 
+                    {
+                        if (fillBoard(row, col + 1)) return true;
+                    }
+                    else 
+                    {
+                        if (fillBoard(row + 1, 0)) return true;
+                    }
+
+                    _board[row][col] = 0;
+                    _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
+                }
+            }
+            
+            return false;
+        }
+        
+        void removeCells(int clue_num)
         {
 
         }
-
+        
     public:
         Sudoku(const Sudoku&) = delete;
-        Sudoku(std::string& difficulty)
+        Sudoku& operator=(const Sudoku&) = delete;
+        Sudoku(const std::string& difficulty) : _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
         {
             while (std::find(difficulties.begin(), difficulties.end(), difficulty) == difficulties.end())
             {
@@ -79,20 +113,21 @@ class Sudoku
                 std::cin >> reply;
                 if (reply == "y")
                 {
-                    difficulty = difficulties[diff_sampler(rng)];
+                    //difficulty = difficulties[diff_sampler(rng)];
                     std::cout << "\nThe randomly selected difficulty is: " << difficulty;
                 } 
                 else 
                 {
                     std::cout << "\nSelect a difficulty: ";
-                    std::cin >> difficulty;
+                    //std::cin >> difficulty;
                 }                
             }
 
             int idx = std::find(difficulties.begin(), difficulties.end(), difficulty) - difficulties.begin();
-            std::uniform_int_distribution<int> gen(clues[idx][0],clues[idx][1]);
+            std::uniform_int_distribution<int> clue_num(clues[idx][0],clues[idx][1]);
 
-            generateBoard(gen(rng));
+            fillBoard(0, 0);
+            removeCells(clue_num(rng));
         }
 
         Sudoku() : Sudoku(difficulties[diff_sampler(rng)])

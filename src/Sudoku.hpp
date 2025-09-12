@@ -24,7 +24,50 @@ class Sudoku
         inline static std::vector<std::string> difficulties{"easy", "medium", "hard", "expert"};
         inline const static std::vector<vector> clues{{40,45}, {32,39}, {25, 31}, {17, 24}};
         inline static std::mt19937 rng{std::random_device{}()};
-        inline static std::uniform_int_distribution<> diff_sampler{0,3};
+        inline static std::uniform_int_distribution<> difficulty_sampler{0,3};
+
+        int getBox(int row, int col)
+        {
+            int sqrtN = std::sqrt(_size);
+            return sqrtN * (row / sqrtN) + (col / sqrtN);
+        }
+
+        int getCandidates(int row, int col)
+        {
+            int box = getBox(row, col);
+            
+            // Get used values for that row, column and box
+            int used = _rows[row] | _cols[col] | _boxes[box];
+
+            // Calculate remaining values
+            return (~used) & ((1 << _size) - 1);
+        }
+
+        std::pair<int, int> findMRV()
+        {
+            int bestCount = 10;
+            std::pair<int, int> bestChoice = {-1, -1};
+
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    if (_board[i][j] != 0) continue;
+
+                    // Count set bits in getCandidates(i, j)
+                    int count = __builtin_popcount(getCandidates(i, j));
+
+                    if (count == 1) return {i, j};
+                    else if (count < bestCount)
+                    {
+                        bestCount = count;
+                        bestChoice = {i, j};
+                    }
+                }
+            }
+
+            return bestChoice;
+        }
 
         void backtrack(int row, int col)
         {      
@@ -41,8 +84,7 @@ class Sudoku
                 return;
             }
 
-            int sqrtN = std::sqrt(_size);
-            int box = sqrtN * (row / sqrtN) + (col / sqrtN);
+            int box = getBox(row, col);
 
             for (int num = 1; num <= 9; num++)
             {
@@ -56,12 +98,46 @@ class Sudoku
                     else backtrack(row + 1, 0);
                     if (_solved) return;
 
-                    _rows[row] ^= mask; _cols[col] ^= mask; _boxes[box] ^= mask;
+                    _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
                     _board[row][col] = 0;
                 }
             }
         }
 
+        void backtrack_withMRV()
+        {      
+            if (_solved) return;
+
+            auto [row, col] = findMRV();
+            
+            if (row == -1) 
+            {
+                _solved = true;
+                return;
+            }
+
+            int box = getBox(row, col);
+            int candidates = getCandidates(row, col);
+
+            for (; candidates; candidates &= (candidates - 1))
+            {
+                // Get lowest set bit (-mask = ~mask + 1):
+                int mask = candidates & -candidates; 
+                
+                // Get number by counting trailing zeros:
+                int num = 1 + __builtin_ctz(mask); 
+
+                _board[row][col] = num;
+                _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                
+                backtrack_withMRV();
+                if (_solved) return;
+
+                _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
+                _board[row][col] = 0;
+            }
+        }
+        
         bool fillBoard(int row, int col) 
         {
             if (row == _size) return true;
@@ -113,7 +189,7 @@ class Sudoku
                 std::cin >> reply;
                 if (reply == "y")
                 {
-                    //difficulty = difficulties[diff_sampler(rng)];
+                    //difficulty = difficulties[difficulty_sampler(rng)];
                     std::cout << "\nThe randomly selected difficulty is: " << difficulty;
                 } 
                 else 
@@ -130,7 +206,7 @@ class Sudoku
             removeCells(clue_num(rng));
         }
 
-        Sudoku() : Sudoku(difficulties[diff_sampler(rng)])
+        Sudoku() : Sudoku(difficulties[difficulty_sampler(rng)])
         {}
         
         Sudoku(const board& in_board) : _size(in_board.size()), _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
@@ -145,8 +221,7 @@ class Sudoku
                         int mask = 1 << (_board[i][j] - 1);
                         _rows[i] ^= mask; _cols[j] ^= mask;   
 
-                        int sqrtN = std::sqrt(_size);
-                        int box = sqrtN * (i / sqrtN) + (j / sqrtN);
+                        int box = getBox(i, j);
                         _boxes[box] ^= mask; 
                     }
                 }
@@ -166,8 +241,8 @@ class Sudoku
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
             // Start backtracking solution
-            backtrack(0, 0);
-
+            //backtrack(0, 0);
+            backtrack_withMRV();
             // End timer
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << " [ms]\n";
@@ -176,7 +251,8 @@ class Sudoku
         friend std::ostream& operator<< (std::ostream& stream, const Sudoku& sudoku) 
         {
             int cellWidth = 3;
-            auto printBorder = [&stream,size=sudoku._size, cellWidth](bool thick=false) {
+            auto printBorder = [&stream,size=sudoku._size, cellWidth](bool thick=false) 
+            {
                 for (int c = 0; c < size; ++c) 
                 {
                     stream << "+";

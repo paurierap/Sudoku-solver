@@ -36,14 +36,33 @@ class Sudoku
             int sqrtN = std::sqrt(_size);
             return sqrtN * (row / sqrtN) + (col / sqrtN);
         }
+        
+        // Place a number using a bitmask:
+        void placeNumber(int row, int col, int num)
+        {
+            int mask = 1 << (num - 1);
+            _board[row][col] = num;
+            _rows[row] |= mask;
+            _cols[col] |= mask;
+            _boxes[getBox(row, col)] |= mask;
+        }
 
+        // Remove a number using a bitmask:
+        void removeNumber(int row, int col)
+        {
+            int num = _board[row][col];
+            int mask = 1 << (num - 1);
+            _board[row][col] = 0;
+            _rows[row] &= ~mask;
+            _cols[col] &= ~mask;
+            _boxes[getBox(row, col)] &= ~mask;
+        }
+        
         // Get all possible candidates for a cell (bitmap):
         int getCandidates(const matrix& board, const vector& rows, const vector& cols, const vector& boxes, int row, int col)
-        {
-            int box = getBox(row, col);
-            
+        {   
             // Get used values for that row, column and box
-            int used = rows[row] | cols[col] | boxes[box];
+            int used = rows[row] | cols[col] | boxes[getBox(row, col)];
 
             // Calculate remaining values
             return (~used) & ((1 << _size) - 1);
@@ -113,15 +132,13 @@ class Sudoku
                 int mask = 1 << (num - 1);
                 if (!(_rows[row] & mask) && !(_cols[col] & mask) && !(_boxes[box] & mask)) 
                 {
-                    _board[row][col] = num;
-                    _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                    placeNumber(row, col, num);
 
                     if (col < _size - 1) backtrack(row, col + 1);
                     else backtrack(row + 1, 0);
                     if (_solved) return;
 
-                    _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
-                    _board[row][col] = 0;
+                    removeNumber(row, col);
                 }
             }
         }
@@ -139,7 +156,6 @@ class Sudoku
                 return;
             }
 
-            int box = getBox(row, col);
             int candidates = getCandidates(_board, _rows, _cols, _boxes, row, col);
 
             for (; candidates; candidates &= (candidates - 1))
@@ -150,14 +166,12 @@ class Sudoku
                 // Get number by counting trailing zeros:
                 int num = 1 + __builtin_ctz(mask); 
 
-                _board[row][col] = num;
-                _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                placeNumber(row, col, num);
                 
                 backtrack_MRV();
                 if (_solved) return;
 
-                _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
-                _board[row][col] = 0;
+                removeNumber(row, col);
             }
         }
         
@@ -229,13 +243,11 @@ class Sudoku
 
                 if (!(_rows[row] & mask) && !(_cols[col] & mask) && !(_boxes[box] & mask)) 
                 {
-                    _board[row][col] = num;
-                    _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                    placeNumber(row, col, num);
                     
                     if (fillBoard()) return true;
 
-                    _board[row][col] = 0;
-                    _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
+                    removeNumber(row, col);
                 }
             }
             
@@ -262,13 +274,13 @@ class Sudoku
 
                 if (_board[row][col] == 0) continue;
 
-                int prev = _board[row][col], mask = 1 << (prev - 1), box = getBox(row, col);
-                _board[row][col] = 0; _rows[row] &= ~mask; _cols[col] &= ~mask; _boxes[box] &= ~mask;
+                int prev = _board[row][col];
+                removeNumber(row, col);
 
                 if (hasUniqueSolution()) removed++;
                 else 
                 {
-                    _board[row][col] = prev; _rows[row] |= mask; _cols[col] |= mask; _boxes[box] |= mask;
+                    placeNumber(row, col, prev);
                 }
             }
         }

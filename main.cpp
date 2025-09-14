@@ -15,8 +15,8 @@ int main(int argc, char* argv[])
         {0,0,0,0,8,0,0,7,9}
     };
 
-    Sudoku sudoku("expert");
-    //sudoku.solve();
+    Sudoku sudoku;
+    
     std::cout << sudoku;
     sudoku.solve("MRV");
     std::cout << sudoku;

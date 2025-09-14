@@ -8,8 +8,8 @@
 #include <cmath>
 #include <string>
 #include <random>
-#include <chrono>
 #include <optional>
+#include "Timer.hpp"
 
 using vector = std::vector<int>;
 using matrix = std::vector<std::vector<int>>;
@@ -315,12 +315,18 @@ class Sudoku
         // Generate Sudoku for either user-chosen or random difficulty:
         Sudoku(std::optional<std::string> difficulty = std::nullopt) : _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
         {
+            std::cout << "Generating Sudoku [difficulty: ";
+
             // Get idx of the difficulties array, then generate a random number of clues:
             int idx = chooseDifficulty(difficulty);
             auto [low, high] = clue_ranges[idx];
             std::uniform_int_distribution<int> clue_num(low, high);
             int clues = clue_num(rng);
             
+            std::cout << difficulties[idx] << "]\nNumber of clues: " << clues << "\n";
+
+            Timer t("Sudoku generation");
+
             // Generate board. First fill, then remove cells based on difficulty:
             fillBoard();
             removeCells(clues);
@@ -362,26 +368,21 @@ class Sudoku
         // Solve the Sudoku:
         void solve(std::string solver="")
         {
-            std::cout << "Solving SUDOKU of size " << _size << "x" << _size << " using ";
+            std::cout << "Solving Sudoku of size " << _size << "x" << _size << " using ";
             
-            // Start timer
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            Timer t("Sudoku solution");
 
             // Start backtracking solution
             if (solver == "MRV") 
             {
-                std::cout << "Minimum Remaining Values (MRV) heuristic backtracking. Elapsed time: ";
+                std::cout << "Minimum Remaining Values (MRV) heuristic backtracking. ";
                 backtrack_MRV();
             }
             else 
             {
-                std::cout << "naive backtracking. Elapsed time: ";
+                std::cout << "naive backtracking. ";
                 backtrack(0, 0);
             }
-            
-            // End timer
-            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << " [ms]\n";
         }
 
         // Pretty print of the Sudoku on the terminal:
@@ -406,6 +407,7 @@ class Sudoku
                 stream << "+\n";
             };
             
+            stream << "\n";
             printBorder(true);
             for (int i = 0; i < sudoku._size; i++)
             {
@@ -428,7 +430,8 @@ class Sudoku
                 if ((i + 1) % 3 == 0) printBorder(true);
                 else printBorder();
             }
-            
+            stream << "\n";
+
             return stream;
         }
 };

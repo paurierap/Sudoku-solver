@@ -1,6 +1,7 @@
 #ifndef SUDOKU_HPP
 #define SUDOKU_HPP
 
+#include <array>
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -8,6 +9,7 @@
 #include <string>
 #include <random>
 #include <chrono>
+#include <optional>
 
 using vector = std::vector<int>;
 using matrix = std::vector<std::vector<int>>;
@@ -26,9 +28,26 @@ class Sudoku
 
         // RNG devices to generate a Sudoku given a difficulty (chosen by the user or random):
         inline static std::vector<std::string> difficulties{"easy", "medium", "hard", "expert"};
-        inline const static std::vector<vector> clues{{40,45}, {32,39}, {25, 31}, {17, 24}};
         inline static std::mt19937 rng{std::random_device{}()};
         inline static std::uniform_int_distribution<> difficulty_sampler{0,3};
+        inline static constexpr std::array<std::pair<int,int>, 4> clue_ranges = {{{40, 45}, {32, 39}, {25, 31}, {17, 24}}};
+
+        
+        // Choose difficulty based on input:
+        int chooseDifficulty(const std::optional<std::string>& difficulty)
+        {
+
+            // Check if a difficulty is provided:
+            if (difficulty) 
+            {
+                auto it = std::find(difficulties.begin(), difficulties.end(), *difficulty);
+
+                // If difficulty is found, get corresponding index in difficulties array. Otherwise, get a random diff:
+                if (it != difficulties.end()) return std::distance(difficulties.begin(), it); 
+                else return difficulty_sampler(rng);
+            } 
+            else return difficulty_sampler(rng); // If no difficulty is provided, it is random
+        }
 
         // Get box [1..9] from row and column:
         int getBox(int row, int col)
@@ -293,37 +312,20 @@ class Sudoku
         Sudoku(const Sudoku&&) = delete;
         Sudoku&& operator=(const Sudoku&&) = delete;
 
-        // Generate Sudoku for a user-chosen difficulty:
-        Sudoku(const std::string& difficulty) : _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
+        // Generate Sudoku for either user-chosen or random difficulty:
+        Sudoku(std::optional<std::string> difficulty = std::nullopt) : _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
         {
-            while (std::find(difficulties.begin(), difficulties.end(), difficulty) == difficulties.end())
-            {
-                std::cout << "Available difficulties are: \n \t - easy\n \t - medium\n \t - hard\n \t - expert\n\n Do you want a randomly selected difficulty? (y/n): ";
-                std::string reply;
-
-                std::cin >> reply;
-                if (reply == "y")
-                {
-                    //difficulty = difficulties[difficulty_sampler(rng)];
-                    std::cout << "\nThe randomly selected difficulty is: " << difficulty;
-                } 
-                else 
-                {
-                    std::cout << "\nSelect a difficulty: ";
-                    //std::cin >> difficulty;
-                }                
-            }
-
-            int idx = std::find(difficulties.begin(), difficulties.end(), difficulty) - difficulties.begin();
-            std::uniform_int_distribution<int> clue_num(clues[idx][0],clues[idx][1]);
-
+            // Get idx of the difficulties array, then generate a random number of clues:
+            int idx = chooseDifficulty(difficulty);
+            auto [low, high] = clue_ranges[idx];
+            std::uniform_int_distribution<int> clue_num(low, high);
+            int clues = clue_num(rng);
+            
+            // Generate board. First fill, then remove cells based on difficulty:
             fillBoard();
-            removeCells(clue_num(rng));
+            removeCells(clues);
         }
 
-        // Generate Sudoku for a random difficulty:
-        Sudoku() : Sudoku(difficulties[difficulty_sampler(rng)])
-        {}
         
         // Generate Sudoku from a vector<vector<int>>:
         Sudoku(const matrix& in_board) : _size(in_board.size()), _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)

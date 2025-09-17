@@ -19,7 +19,7 @@ class Sudoku
     private:
 
         // Sudoku native variables:
-        const int _size = 9;
+        int _size = 9;
         matrix _board;
         vector _rows;
         vector _cols;
@@ -31,7 +31,6 @@ class Sudoku
         inline static std::mt19937 rng{std::random_device{}()};
         inline static std::uniform_int_distribution<> difficulty_sampler{0,3};
         inline static constexpr std::array<std::pair<int,int>, 4> clue_ranges = {{{40, 45}, {32, 39}, {25, 31}, {17, 24}}};
-
         
         // Choose difficulty based on input:
         int chooseDifficulty(const std::optional<std::string>& difficulty)
@@ -50,7 +49,7 @@ class Sudoku
         }
 
         // Get box [1..9] from row and column:
-        int getBox(int row, int col)
+        int getBox(int row, int col) const
         {
             int sqrtN = std::sqrt(_size);
             return sqrtN * (row / sqrtN) + (col / sqrtN);
@@ -78,7 +77,7 @@ class Sudoku
         }
         
         // Get all possible candidates for a cell (bitmap):
-        int getCandidates(const matrix& board, const vector& rows, const vector& cols, const vector& boxes, int row, int col)
+        int getCandidates(const matrix& board, const vector& rows, const vector& cols, const vector& boxes, int row, int col) const
         {   
             // Get used values for that row, column and box
             int used = rows[row] | cols[col] | boxes[getBox(row, col)];
@@ -88,7 +87,7 @@ class Sudoku
         }
 
         // Return {row, col} with the minimum number of candidates:
-        std::pair<int, int> findMRV(const matrix& board, const vector& rows, const vector& cols, const vector& boxes)
+        std::pair<int, int> findMRV(const matrix& board, const vector& rows, const vector& cols, const vector& boxes) const
         {
             int bestCount = 10;
             std::pair<int, int> bestChoice = {-1, -1};
@@ -115,7 +114,7 @@ class Sudoku
         }
 
         // Return {row, col} with the next empty cell:
-        std::pair<int, int> findEmpty()
+        std::pair<int, int> findEmpty() const
         {
             for (int i = 0; i < _size; i++)
             {
@@ -297,10 +296,7 @@ class Sudoku
                 removeNumber(row, col);
 
                 if (hasUniqueSolution()) removed++;
-                else 
-                {
-                    placeNumber(row, col, prev);
-                }
+                else placeNumber(row, col, prev);
             }
         }
 
@@ -360,7 +356,7 @@ class Sudoku
         }
         
         // Return state of the Sudoku:
-        bool isSolved()
+        bool isSolved() const
         {
             return _solved;
         }
@@ -383,6 +379,11 @@ class Sudoku
                 std::cout << "naive backtracking. ";
                 backtrack(0, 0);
             }
+        }
+        
+        const matrix& getBoard() const
+        {
+            return _board;
         }
 
         // Pretty print of the Sudoku on the terminal:

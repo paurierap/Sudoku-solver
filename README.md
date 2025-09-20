@@ -1,6 +1,6 @@
 # Sudoku Generator and Solver
 
-A C++ implementation of a Sudoku generator and solver. It generates valid Sudoku puzzles of varying difficulty and solves them using either naive and heuristic-based backtracking.
+A C++ implementation of a Sudoku generator and solver. It generates valid Sudoku puzzles of varying difficulty and solves them using either naive or Minimum Remaining Values (MRV) heuristic-based backtracking.
 
 ## Features
 

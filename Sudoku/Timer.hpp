@@ -9,25 +9,25 @@
 
 class Timer
 {
-public:
-    Timer(const std::string& label = "") : _label(label), _start(std::chrono::high_resolution_clock::now()) {}
+    private:
+        std::string _label;
+        std::chrono::high_resolution_clock::time_point _start;
 
-    ~Timer()
-    {
-        auto end = std::chrono::high_resolution_clock::now();
-        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(end - _start).count();
+    public:
+        Timer(const std::string& label = "") : _label(label), _start(std::chrono::high_resolution_clock::now()) {}
 
-        std::cout << _label << " took ";
+        ~Timer()
+        {
+            auto end = std::chrono::high_resolution_clock::now();
+            auto micros = std::chrono::duration_cast<std::chrono::microseconds>(end - _start).count();
 
-        if (micros < 1000) std::cout << micros << " \u03BCs"; // microseconds
-        else std::cout << micros / 1000.0 << " ms"; // milliseconds
+            std::cout << _label << " took ";
 
-        std::cout << std::endl;
-    }
+            if (micros < 1000) std::cout << micros << " \u03BCs"; 
+            else std::cout << micros / 1000.0 << " ms";
 
-private:
-    std::string _label;
-    std::chrono::high_resolution_clock::time_point _start;
+            std::cout << "\n";
+        }
 };
 
 #endif

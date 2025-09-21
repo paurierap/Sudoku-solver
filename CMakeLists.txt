@@ -9,3 +9,8 @@ enable_testing()
 
 # Add subdirectories
 add_subdirectory(tests)
+
+# Add executable
+add_executable(sudoku_app main.cpp)
+
+target_include_directories(sudoku_app PRIVATE ${CMAKE_SOURCE_DIR}/Sudoku)

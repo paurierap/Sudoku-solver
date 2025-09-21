@@ -278,28 +278,39 @@ class Sudoku
             int cellsToRemove = (_size * _size) - clue_num;
 
             std::vector<std::pair<int,int>> positions;
+            positions.reserve(_size * _size);
             for (int r = 0; r < _size; ++r)
-            {
-                for (int c = 0; c < _size; ++c) positions.emplace_back(r, c);
-            }
-
-            std::shuffle(positions.begin(), positions.end(), rng);
+                for (int c = 0; c < _size; ++c)
+                    positions.emplace_back(r, c);
 
             int removed = 0;
-            for (auto [row, col] : positions)
+
+            const int maxPasses = 10; 
+            for (int pass = 0; pass < maxPasses && removed < cellsToRemove; ++pass)
             {
-                if (removed > cellsToRemove) break;
+                std::shuffle(positions.begin(), positions.end(), rng);
+                bool progress = false;
 
-                if (_board[row][col] == 0) continue;
+                for (auto [row, col] : positions)
+                {
+                    if (removed >= cellsToRemove) break;
+                    if (_board[row][col] == 0) continue;
 
-                int prev = _board[row][col];
-                removeNumber(row, col);
+                    int prev = _board[row][col];
+                    removeNumber(row, col);
 
-                if (hasUniqueSolution()) removed++;
-                else placeNumber(row, col, prev);
+                    if (hasUniqueSolution())
+                    {
+                        ++removed;
+                        progress = true;
+                    }
+                    else placeNumber(row, col, prev);
+                    
+                }
+
+                if (!progress) break; // no further removable cells found in this pass
             }
         }
-
         
     public:
         // Delete copy and move constructor and copy and move assignment:

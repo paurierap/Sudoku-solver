@@ -17,15 +17,36 @@ A C++ implementation of a Sudoku generator and solver. It generates valid Sudoku
 
 ### Requirements
 - C++17 or later
-- CMake (optional, if you provide a CMakeLists.txt)
+- CMake (3.14+)
 - A standard C++ compiler (g++, clang++, MSVC)
 
-### Example (with g++)
-```bash
-g++ -std=c++17 -O2 main.cpp -o sudoku
+### Steps
+
+1. Create a `main.cpp` file in the project root.  This file should include your `Sudoku` header and contain a `main()` function (see [Usage](#usage)).
+2. Configure the build system with `CMake` (this will generate the `Makefiles`):
+```console
+Sudoku-solver$ cmake -S . -B build
+-- The C compiler identification is AppleClang 14.0.0.14000029
+-- The CXX compiler identification is AppleClang 14.0.0.14000029
+...
+-- Build files have been written to: .../Sudoku-solver/build
+```
+3. Build the project (example target name `sudoku_app`):
+```console
+Sudoku-solver$ cd build 
+Sudoku-solver/build$ make sudoku_app
+[ 50%] Building CXX object CMakeFiles/sudoku_app.dir/main.cpp.o
+[100%] Linking CXX executable sudoku_app
+[100%] Built target sudoku_app
+```
+4. Run the executable
+```console
+Sudoku-solver/build$ ./sudoku_app
 ```
 
 ## Usage
+
+Some examples of code to use in your `main.cpp`.
 
 ### Random or chosen difficulty
 ```cpp
@@ -49,6 +70,7 @@ int main() {
 Here, 0's are treated as empty spaces. For example:
 
 ```cpp
+#include "Sudoku.hpp"
 #include <vector>
 
 std::vector<std::vector<int>> board = {
@@ -67,3 +89,5 @@ Typical timings without compiler optimization:
 - Solving (depending on difficulty):
   - Naive backtracking is around 500-1000 µs.
   - MRV backtracking is around 30-100 µs.
+  
+Performance may vary depending on compiler, optimisation flags (e.g., `-O3`), and hardware.

@@ -81,17 +81,20 @@ TEST(Sudoku, ConstructsHard)
 
 TEST(Sudoku, ConstructsExpert) 
 {
-    Sudoku s("expert");
-    EXPECT_FALSE(s.isSolved());
+    for (int i = 0; i < 100; i++)
+    {
+        Sudoku s("expert");
+        EXPECT_FALSE(s.isSolved());
 
-    matrix board = s.getBoard();
-    int clues = count_clues(board);
-    
-    EXPECT_GE(clues, 17);
-    EXPECT_LE(clues, 24);
+        matrix board = s.getBoard();
+        int clues = count_clues(board);
+
+        EXPECT_GE(clues, 17);
+        EXPECT_LE(clues, 24);
+    }
 }
 
-TEST_F(SudokuTest, ConstructorFromBoard)
+TEST_F(SudokuTest, ConstructsFromBoard)
 {
     Sudoku sudoku(board);
     matrix SudokuBoard = sudoku.getBoard();

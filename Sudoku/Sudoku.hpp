@@ -272,8 +272,8 @@ class Sudoku
             return false;
         }
         
-        // Remove random cells according to difficulty and ensure Sudoku is valid:
-        void removeCells(int clue_num)
+        // Remove random cells according to difficulty, ensure Sudoku is valid and return number of clues:
+        int removeCells(int clue_num)
         {
             int cellsToRemove = (_size * _size) - clue_num;
 
@@ -285,11 +285,7 @@ class Sudoku
 
             int removed = 0;
 
-            const int maxPasses = 10; 
-            for (int pass = 0; pass < maxPasses && removed < cellsToRemove; ++pass)
-            {
-                std::shuffle(positions.begin(), positions.end(), rng);
-                bool progress = false;
+            std::shuffle(positions.begin(), positions.end(), rng);
 
                 for (auto [row, col] : positions)
                 {
@@ -299,19 +295,62 @@ class Sudoku
                     int prev = _board[row][col];
                     removeNumber(row, col);
 
-                    if (hasUniqueSolution())
-                    {
-                        ++removed;
-                        progress = true;
-                    }
+                    if (hasUniqueSolution()) ++removed;
                     else placeNumber(row, col, prev);
-                    
                 }
 
-                if (!progress) break; // no further removable cells found in this pass
-            }
+            return (_size * _size) - removed;
         }
-        
+
+        void generateSudoku(const std::optional<std::string>& difficulty)
+        {
+            std::cout << "Generating Sudoku [difficulty: ";
+
+            // Get idx of the difficulties array, then generate a random number of clues:
+            int idx = chooseDifficulty(difficulty);
+            auto [low, high] = clue_ranges[idx];
+            std::uniform_int_distribution<int> clue_num(low, high);
+            int targetClues = clue_num(rng);
+            
+            std::cout << difficulties[idx] << "]\nTarget number of clues: " << targetClues << "\n";
+            
+            // Time Sudoku generation:
+            timer::Timer t("Sudoku generation");
+
+            // Just in case very few clues make the Sudoku not unique, we set a max of 10 attempts at trying to reach a state of uniqueness. This is mainly for expert and, sometimes, hard difficulties:
+            constexpr int maxAttempts = 10;
+            int finalClues = targetClues;
+            bool success = false;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                // Generate board. First fill, then remove cells based on difficulty:
+                fillBoard();
+                finalClues = removeCells(targetClues);
+
+                if (finalClues <= high && finalClues >= low)
+                {
+                    success = true;
+                    t.stop();
+                    break;
+                }
+            }
+            
+            // Output a message saying that the specified difficulty could not be generated and provide alternative sudoku:
+            if (!success) 
+            {   
+                std::string new_diff = "unknown";
+                for (int i = 0; i < clue_ranges.size(); ++i) 
+                {
+                    if (finalClues >= clue_ranges[i].first && finalClues <= clue_ranges[i].second) {new_diff = difficulties[i]; break;}
+                }
+
+                std::cout << "Sudoku with difficulty " << difficulties[idx] << " could not be generated. Instead, a Sudoku with difficulty " << new_diff << " was generated. \n";
+            }
+
+            std::cout << "Final number of clues is: " << finalClues << "\n";
+        }
+
     public:
         // Delete copy and move constructor and copy and move assignment:
         Sudoku(const Sudoku&) = delete;
@@ -322,21 +361,7 @@ class Sudoku
         // Generate Sudoku for either user-chosen or random difficulty:
         Sudoku(std::optional<std::string> difficulty = std::nullopt) : _board(_size, vector(_size)), _rows(_size), _cols(_size), _boxes(_size)
         {
-            std::cout << "Generating Sudoku [difficulty: ";
-
-            // Get idx of the difficulties array, then generate a random number of clues:
-            int idx = chooseDifficulty(difficulty);
-            auto [low, high] = clue_ranges[idx];
-            std::uniform_int_distribution<int> clue_num(low, high);
-            int clues = clue_num(rng);
-            
-            std::cout << difficulties[idx] << "]\nNumber of clues: " << clues << "\n";
-
-            Timer t("Sudoku generation");
-
-            // Generate board. First fill, then remove cells based on difficulty:
-            fillBoard();
-            removeCells(clues);
+            generateSudoku(difficulty);
         }
 
         
@@ -377,7 +402,7 @@ class Sudoku
         {
             std::cout << "Solving Sudoku of size " << _size << "x" << _size << " using ";
             
-            Timer t("Sudoku solution");
+            timer::Timer t("Sudoku solution");
 
             // Start backtracking solution
             if (solver == "MRV") 

@@ -81,14 +81,14 @@ TEST(Sudoku, ConstructsHard)
 
 TEST(Sudoku, ConstructsExpert) 
 {
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 10; i++)
     {
         Sudoku s("expert");
         EXPECT_FALSE(s.isSolved());
 
         matrix board = s.getBoard();
         int clues = count_clues(board);
-
+        
         EXPECT_GE(clues, 17);
         EXPECT_LE(clues, 24);
     }

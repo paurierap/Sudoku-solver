@@ -56,12 +56,13 @@ int main() {
 
     // An easy and a random sudoku:
     Sudoku sudoku_chosen("easy"), sudoku_random;
-    std::cout << sudoku_chosen << sudoku_random;
 
+    std::cout << sudoku_chosen << sudoku_random;
     sudoku_chosen.solve("MRV");
     sudoku_random.solve("MRV");
-
     std::cout << sudoku_chosen << sudoku_random;
+
+    return EXIT_SUCCESS;
 }
 ```
 
@@ -72,14 +73,21 @@ Here, 0's are treated as empty spaces. For example:
 ```cpp
 #include "Sudoku.hpp"
 #include <vector>
+int main() 
+{
+  std::vector<std::vector<int>> board = {
+      {5,3,0, 0,7,0, 0,0,0},
+      {6,0,0, 1,9,5, 0,0,0},
+      ...
+  }
+  Sudoku sudoku(board);
 
-std::vector<std::vector<int>> board = {
-    {5,3,0, 0,7,0, 0,0,0},
-    {6,0,0, 1,9,5, 0,0,0},
-    ...
+  std::cout << sudoku;
+  sudoku.solve("MRV");
+  std::cout << sudoku;
+
+  return EXIT_SUCCESS;
 }
-
-Sudoku sudoku(board);
 ```
 
 ## Performance
@@ -92,7 +100,7 @@ Typical timings without compiler optimization:
   
 Performance may vary depending on compiler, optimisation flags (e.g., `-O3`), and hardware.
 
-## Note
+## Notes
 
 Sudoku generation is accomplished by first creating a complete, solved board by randomly filling rows, columns, and sub-boxes with valid values. After the board has been filled, cells are randomly removed (reducing the number of given clues). For each removal, the board is re-solved with that cell missing to ensure uniqueness of the solution. If the board admits multiple solutions, the removal is undone and another cell is tested.
 

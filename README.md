@@ -11,7 +11,7 @@ A C++ implementation of a Sudoku generator and solver. It generates valid Sudoku
   - Naive backtracking: every empty cell is visited and all 9 digits are tested. 
   - Minimum Remaining Values (MRV) heuristic: the next cell is chosen according to the one with least valid candidates. Performance is around x10 compared to the previous.
 - Performance measurement uses a lightweight `Timer` utility.
-- Pretty-print puzzles to the terminal.
+- Pretty-print puzzles to the terminal by overloading the `operator<<`.
 
 ## Build Instructions
 
@@ -91,3 +91,15 @@ Typical timings without compiler optimization:
   - MRV backtracking is around 30-100 µs.
   
 Performance may vary depending on compiler, optimisation flags (e.g., `-O3`), and hardware.
+
+## Note
+
+Sudoku generation is accomplished by first creating a complete, solved board by randomly filling rows, columns, and sub-boxes with valid values. After the board has been filled, cells are randomly removed (reducing the number of given clues). For each removal, the board is re-solved with that cell missing to ensure uniqueness of the solution. If the board admits multiple solutions, the removal is undone and another cell is tested.
+
+The number of clues at the end depends on the difficulty:
+- `easy`: 40-45 clues.
+- `medium`: 32-39 clues.
+- `hard`: 25-31 clues.
+- `expert`: *typically* 17-24 clues. 
+
+Expert difficulty is especially challenging. Since each removal must preserve uniqueness, it is common that the final number of clues remains above the target range. To handle this, the program retries up to 10 times. If the target difficulty cannot be achieved (most often for `expert`), the closest matching difficulty is applied instead, and the last valid board is used. This balances performance with generating realistic puzzles.
